@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: OpenMP - Lab Exercises</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <style>
+        .exercise-box {
+            background: #fff9e6;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        
+        .exercise-box h3 {
+            color: #ff9800;
+            margin-top: 0;
+        }
+        
+        .hint-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .objective-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .task-list {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .task-list li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="index.html">Home</a>
+            <a href="chapter05.html">Chapter 5: OpenMP</a>
+            <a href="chapter05_flashcards.html">📇 Flashcards</a>
+            <a href="chapter06.html">Next: Chapter 6</a>
+        </div>
+        
+        <h1>Chapter 5: OpenMP - Lab Exercises</h1>
+        
+        <div class="objective-box">
+            <h2>Lab Objectives</h2>
+            <ul>
+                <li>Learn to parallelize loops using OpenMP directives</li>
+                <li>Understand data sharing clauses (shared, private, reduction)</li>
+                <li>Practice using different scheduling strategies</li>
+                <li>Implement synchronization constructs (critical, atomic, barrier)</li>
+                <li>Measure and analyze performance improvements</li>
+            </ul>
+        </div>
+        
+        <!-- Exercise 1: Parallel For Loop -->
+        <div class="exercise-box">
+            <h3>Exercise 1: Parallel Array Processing</h3>
+            <p><strong>Problem:</strong> Process a large array in parallel using OpenMP's parallel for directive.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;</span>
+
+<span class="keyword">#define</span> SIZE <span class="literal">10000000</span>
+
+<span class="keyword">int</span> main() {
+    <span class="keyword">double</span> *array = (<span class="keyword">double</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>));
+    
+    <span class="comment">// Initialize array</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        array[i] = i;
+    }
+    
+    clock_t start = clock();
+    
+    <span class="comment">// Process array</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        array[i] = array[i] * array[i] + <span class="literal">1.0</span>;
+    }
+    
+    clock_t end = clock();
+    <span class="keyword">double</span> time_taken = ((<span class="keyword">double</span>)(end - start)) / CLOCKS_PER_SEC;
+    printf(<span class="string">"Time taken: %f seconds\n"</span>, time_taken);
+    
+    free(array);
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Add <code>#include &lt;omp.h&gt;</code> header</li>
+                    <li>Add <code>#pragma omp parallel for</code> before the processing loop</li>
+                    <li>Compile with OpenMP: <code>gcc -fopenmp program.c -o program</code></li>
+                    <li>Set number of threads using <code>omp_set_num_threads()</code> or environment variable <code>OMP_NUM_THREADS</code></li>
+                    <li>Measure and compare execution time</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Basic parallel for: <code>#pragma omp parallel for</code></li>
+                    <li>Set threads: <code>omp_set_num_threads(4);</code> or export <code>OMP_NUM_THREADS=4</code></li>
+                    <li>Print thread info: <code>printf("Thread %d processing\n", omp_get_thread_num());</code></li>
+                    <li>Compile: <code>gcc -fopenmp -O2 program.c -o program</code></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 2: Reduction -->
+        <div class="exercise-box">
+            <h3>Exercise 2: Parallel Sum with Reduction</h3>
+            <p><strong>Problem:</strong> Calculate the sum of a large array using OpenMP reduction clause.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;</span>
+
+<span class="keyword">#define</span> SIZE <span class="literal">10000000</span>
+
+<span class="keyword">int</span> main() {
+    <span class="keyword">double</span> *array = (<span class="keyword">double</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>));
+    
+    <span class="comment">// Initialize array</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        array[i] = <span class="literal">1.0</span>;
+    }
+    
+    <span class="keyword">double</span> sum = <span class="literal">0.0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        sum += array[i];
+    }
+    
+    printf(<span class="string">"Sum: %f\n"</span>, sum);
+    free(array);
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Use <code>#pragma omp parallel for reduction(+:sum)</code> to parallelize the sum</li>
+                    <li>Try different reduction operations: <code>+</code>, <code>*</code>, <code>max</code>, <code>min</code></li>
+                    <li>Compare with a version using critical section (slower approach)</li>
+                    <li>Measure performance difference</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <ul>
+                    <li><strong>Option 1:</strong> Use <code>reduction</code> clause (recommended, fastest)</li>
+                    <li><strong>Option 2:</strong> Use <code>critical</code> section (slower, more contention)</li>
+                    <li><strong>Option 3:</strong> Use local variables and combine at end (manual reduction)</li>
+                </ul>
+                <p><em>Implement all three approaches and measure performance - reduction is significantly faster!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Reduction syntax: <code>#pragma omp parallel for reduction(operation:variable)</code></li>
+                    <li>Operations: <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>max</code>, <code>min</code>, <code>&amp;</code>, <code>|</code>, <code>^</code>, <code>&amp;&amp;</code>, <code>||</code></li>
+                    <li>Reduction is much faster than using critical sections</li>
+                    <li>Each thread gets a private copy, combined at the end</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 3: Dot Product -->
+        <div class="exercise-box">
+            <h3>Exercise 3: Parallel Dot Product</h3>
+            <p><strong>Problem:</strong> Calculate the dot product of two vectors using OpenMP with proper data sharing.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;</span>
+
+<span class="keyword">#define</span> SIZE <span class="literal">10000000</span>
+
+<span class="keyword">int</span> main() {
+    <span class="keyword">double</span> *a = (<span class="keyword">double</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>));
+    <span class="keyword">double</span> *b = (<span class="keyword">double</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>));
+    
+    <span class="comment">// Initialize vectors</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        a[i] = <span class="literal">1.0</span>;
+        b[i] = <span class="literal">2.0</span>;
+    }
+    
+    <span class="keyword">double</span> dot_product = <span class="literal">0.0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        dot_product += a[i] * b[i];
+    }
+    
+    printf(<span class="string">"Dot product: %f\n"</span>, dot_product);
+    
+    free(a);
+    free(b);
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Parallelize the dot product loop using <code>#pragma omp parallel for reduction(+:dot_product)</code></li>
+                    <li>Ensure arrays <code>a</code> and <code>b</code> are shared (default)</li>
+                    <li>Use <code>reduction</code> for <code>dot_product</code></li>
+                    <li>Measure performance improvement</li>
+                    <li>Try different schedule clauses: <code>static</code>, <code>dynamic</code>, <code>guided</code></li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <p>Try different scheduling strategies:</p>
+                <ul>
+                    <li><strong>static:</strong> Equal chunks assigned at compile time (good for uniform work)</li>
+                    <li><strong>dynamic:</strong> Chunks assigned at runtime (good for varying work per iteration)</li>
+                    <li><strong>guided:</strong> Decreasing chunk sizes (good for load balancing)</li>
+                    <li><strong>auto:</strong> Let OpenMP decide</li>
+                </ul>
+                <p><em>Test different schedule types: <code>schedule(static)</code>, <code>schedule(dynamic, chunk_size)</code>, <code>schedule(guided)</code> and compare performance!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Arrays are shared by default</li>
+                    <li>Use reduction for the accumulator variable</li>
+                    <li>Schedule examples:
+                        <ul>
+                            <li><code>schedule(static)</code> - equal chunks</li>
+                            <li><code>schedule(dynamic, 1000)</code> - dynamic with chunk size 1000</li>
+                            <li><code>schedule(guided)</code> - decreasing chunk sizes</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 4: Matrix Multiplication -->
+        <div class="exercise-box">
+            <h3>Exercise 4: Parallel Matrix Multiplication</h3>
+            <p><strong>Problem:</strong> Multiply two matrices using OpenMP, parallelizing the outer loop.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;</span>
+
+<span class="keyword">#define</span> SIZE <span class="literal">1000</span>
+
+<span class="keyword">int</span> main() {
+    <span class="keyword">double</span> **A = (<span class="keyword">double</span>**)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>*));
+    <span class="keyword">double</span> **B = (<span class="keyword">double</span>**)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>*));
+    <span class="keyword">double</span> **C = (<span class="keyword">double</span>**)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>*));
+    
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        A[i] = (<span class="keyword">double</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>));
+        B[i] = (<span class="keyword">double</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>));
+        C[i] = (<span class="keyword">double</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>));
+    }
+    
+    <span class="comment">// Initialize matrices</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="literal">0</span>; j < SIZE; j++) {
+            A[i][j] = i + j;
+            B[i][j] = i * j;
+        }
+    }
+    
+    clock_t start = clock();
+    
+    <span class="comment">// Matrix multiplication</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="literal">0</span>; j < SIZE; j++) {
+            C[i][j] = <span class="literal">0.0</span>;
+            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="literal">0</span>; k < SIZE; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    
+    clock_t end = clock();
+    <span class="keyword">double</span> time_taken = ((<span class="keyword">double</span>)(end - start)) / CLOCKS_PER_SEC;
+    printf(<span class="string">"Time taken: %f seconds\n"</span>, time_taken);
+    
+    <span class="comment">// Free memory</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        free(A[i]);
+        free(B[i]);
+        free(C[i]);
+    }
+    free(A);
+    free(B);
+    free(C);
+    
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Parallelize the outer loop (i loop) using <code>#pragma omp parallel for</code></li>
+                    <li>Make loop variable <code>i</code> private</li>
+                    <li>Ensure <code>j</code> and <code>k</code> are private (they should be by default in the loop)</li>
+                    <li>Try parallelizing with <code>collapse(2)</code> for both outer loops</li>
+                    <li>Compare performance of different approaches</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <ul>
+                    <li><strong>Option 1:</strong> Parallelize only outer loop (i) - good for row-based parallelism</li>
+                    <li><strong>Option 2:</strong> Use <code>collapse(2)</code> to parallelize both i and j loops - more parallelism</li>
+                    <li><strong>Option 3:</strong> Try different schedule types with collapse for load balancing</li>
+                </ul>
+                <p><em>Test both approaches and see which gives better performance on your system!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Parallelize outer loop: <code>#pragma omp parallel for private(i, j, k)</code></li>
+                    <li>Or use collapse: <code>#pragma omp parallel for collapse(2)</code> for i and j loops</li>
+                    <li>Variables declared in loop are private by default</li>
+                    <li>Matrices A, B, C are shared (read-only for A, B; write-only per row for C)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 5: Critical Section -->
+        <div class="exercise-box">
+            <h3>Exercise 5: Parallel Counter with Critical Section</h3>
+            <p><strong>Problem:</strong> Count occurrences of a condition in an array using OpenMP, comparing critical section vs atomic vs reduction.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;</span>
+
+<span class="keyword">#define</span> SIZE <span class="literal">10000000</span>
+
+<span class="keyword">int</span> main() {
+    <span class="keyword">int</span> *array = (<span class="keyword">int</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">int</span>));
+    
+    <span class="comment">// Initialize array</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        array[i] = i % <span class="literal">100</span>;
+    }
+    
+    <span class="keyword">int</span> count = <span class="literal">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        <span class="keyword">if</span> (array[i] > <span class="literal">50</span>) {
+            count++;
+        }
+    }
+    
+    printf(<span class="string">"Count: %d\n"</span>, count);
+    free(array);
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Create version 1: Use <code>#pragma omp critical</code> to protect the counter increment</li>
+                    <li>Create version 2: Use <code>#pragma omp atomic</code> for the increment</li>
+                    <li>Create version 3: Use <code>reduction(+:count)</code> (best approach)</li>
+                    <li>Compare performance of all three versions</li>
+                    <li>Explain why reduction is fastest</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <p>This exercise is designed to compare different synchronization mechanisms:</p>
+                <ul>
+                    <li><strong>Version 1:</strong> <code>critical</code> section (most overhead, serializes all increments)</li>
+                    <li><strong>Version 2:</strong> <code>atomic</code> operation (faster than critical, hardware-supported)</li>
+                    <li><strong>Version 3:</strong> <code>reduction</code> (fastest, no contention, each thread has private copy)</li>
+                </ul>
+                <p><em>Implement all three versions and measure performance - reduction should be significantly faster!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Critical section: <code>#pragma omp critical { count++; }</code></li>
+                    <li>Atomic: <code>#pragma omp atomic</code> before <code>count++</code></li>
+                    <li>Reduction: <code>#pragma omp parallel for reduction(+:count)</code></li>
+                    <li>Reduction is fastest because each thread has a private copy</li>
+                    <li>Atomic is faster than critical but slower than reduction</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 6: Sections -->
+        <div class="exercise-box">
+            <h3>Exercise 6: Parallel Sections</h3>
+            <p><strong>Problem:</strong> Execute different independent tasks in parallel using OpenMP sections.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;</span>
+
+<span class="keyword">void</span> task1() {
+    printf(<span class="string">"Task 1: Processing data...\n"</span>);
+    sleep(<span class="literal">2</span>);
+    printf(<span class="string">"Task 1: Done\n"</span>);
+}
+
+<span class="keyword">void</span> task2() {
+    printf(<span class="string">"Task 2: Reading file...\n"</span>);
+    sleep(<span class="literal">2</span>);
+    printf(<span class="string">"Task 2: Done\n"</span>);
+}
+
+<span class="keyword">void</span> task3() {
+    printf(<span class="string">"Task 3: Computing...\n"</span>);
+    sleep(<span class="literal">2</span>);
+    printf(<span class="string">"Task 3: Done\n"</span>);
+}
+
+<span class="keyword">int</span> main() {
+    task1();
+    task2();
+    task3();
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Use <code>#pragma omp parallel sections</code> to run tasks in parallel</li>
+                    <li>Mark each task with <code>#pragma omp section</code></li>
+                    <li>Measure total execution time (should be ~2 seconds instead of 6)</li>
+                    <li>Add a fourth task and observe behavior</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Structure:
+                        <pre><code>#pragma omp parallel sections
+{
+    #pragma omp section
+    task1();
+    
+    #pragma omp section
+    task2();
+    
+    #pragma omp section
+    task3();
+}</code></pre>
+                    </li>
+                    <li>Each section runs in a different thread</li>
+                    <li>All sections complete before continuing</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Exercise 7: Nested Parallelism -->
+        <div class="exercise-box">
+            <h3>Exercise 7: Nested Parallelism</h3>
+            <p><strong>Problem:</strong> Create a hierarchy of threads using nested parallel regions.</p>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Write a program with a parallel region of 2 threads.</li>
+                    <li>Inside that region, create another parallel region of 2 threads.</li>
+                    <li>Print the parent thread ID and child thread ID.</li>
+                    <li>Run the program and observe that only 2 threads are active by default.</li>
+                    <li>Add <code>omp_set_nested(1);</code> at the start of <code>main()</code> and run it again.</li>
+                    <li>Observe the difference in output (should show 4 "Parent -> Child" lines).</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Parent ID: <code>int p = omp_get_thread_num();</code></li>
+                    <li>Child ID: <code>int c = omp_get_thread_num();</code> (inside the inner region)</li>
+                    <li>Nested regions: 
+                        <pre><code>omp_set_nested(1);
+#pragma omp parallel num_threads(2) {
+    #pragma omp parallel num_threads(2) { ... }
+}</code></pre>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Exercise 8: Manual Locks -->
+        <div class="exercise-box">
+            <h3>Exercise 8: Synchronization with Locks</h3>
+            <p><strong>Problem:</strong> Protect a shared resource using <code>omp_lock_t</code> instead of critical sections.</p>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Initialize a lock using <code>omp_init_lock()</code>.</li>
+                    <li>In a parallel region, use <code>omp_set_lock()</code> and <code>omp_unset_lock()</code> to protect a <code>printf</code> statement.</li>
+                    <li>Ensure only one thread prints at a time.</li>
+                    <li>Destroy the lock at the end using <code>omp_destroy_lock()</code>.</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Declaration: <code>omp_lock_t lock;</code></li>
+                    <li>Wait/Acquire: <code>omp_set_lock(&lock);</code></li>
+                    <li>Release: <code>omp_unset_lock(&lock);</code></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Compilation Instructions</h2>
+            <p>All OpenMP programs must be compiled with the <code>-fopenmp</code> flag:</p>
+            <pre><code>gcc -fopenmp program.c -o program</code></pre>
+            <p>Or with optimization:</p>
+            <pre><code>gcc -fopenmp -O2 program.c -o program</code></pre>
+            <p>Set number of threads at runtime:</p>
+            <pre><code>export OMP_NUM_THREADS=4
+./program</code></pre>
+        </div>
+        
+
+        
+        <div class="info-box">
+            <strong>Additional Resources:</strong>
+            <ul>
+                <li>Review Chapter 5 tutorial for detailed explanations</li>
+                <li>Check <code>Examples/OpenMp_Examples/</code> for reference implementations</li>
+                <li>Use <code>omp_get_wtime()</code> for more accurate timing</li>
+                <li>Experiment with environment variables: <code>OMP_NUM_THREADS</code></li>
+            </ul>
+        </div>
+        
+        <footer>
+            <p>© 2026 - Dr Kamal Beydoun | Lebanese University</p>
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('pre').forEach(block => {
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
+            button.innerText = 'Copy';
+            block.appendChild(button);
+
+            button.addEventListener('click', () => {
+                const code = block.innerText.replace(/Copy$/, '');
+                navigator.clipboard.writeText(code).then(() => {
+                    button.innerText = 'Copied!';
+                    button.classList.add('copied');
+                    setTimeout(() => {
+                        button.innerText = 'Copy';
+                        button.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

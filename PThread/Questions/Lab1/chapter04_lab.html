@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: PThreads - Lab Exercises</title>
+    <link rel="stylesheet" href="../../../styles.css">
+    <style>
+        .exercise-box {
+            background: #fff9e6;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        
+        .exercise-box h3 {
+            color: #ff9800;
+            margin-top: 0;
+        }
+        
+        .hint-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .objective-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .task-list {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .task-list li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="index.html">Home</a>
+            <a href="chapter04.html">Chapter 4: PThreads</a>
+            <a href="chapter04_flashcards.html">📇 Flashcards</a>
+            <a href="chapter05.html">Next: Chapter 5</a>
+        </div>
+        
+        <h1>Chapter 4: PThreads - Lab Exercises</h1>
+        
+        <div class="objective-box">
+            <h2>Lab Objectives</h2>
+            <ul>
+                <li>Learn to create and manage POSIX threads using pthread functions</li>
+                <li>Understand thread synchronization using mutexes and condition variables</li>
+                <li>Practice parallelizing sequential C programs</li>
+                <li>Implement thread-safe data structures and algorithms</li>
+                <li>Measure performance improvements from parallelization</li>
+            </ul>
+        </div>
+        
+        <!-- Exercise 1: Basic Thread Creation -->
+        <div class="exercise-box">
+            <h3>Exercise 1: Parallel Array Processing</h3>
+            <p><strong>Problem:</strong> Process a large array using multiple threads, where each thread processes a portion of the array.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;</span>
+
+<span class="keyword">#define</span> ARRAY_SIZE <span class="literal">1000000</span>
+
+<span class="keyword">void</span> processArray(<span class="keyword">int</span> *array, <span class="keyword">int</span> size) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < size; i++) {
+        array[i] = array[i] * array[i] + <span class="literal">1</span>; <span class="comment">// Some computation</span>
+    }
+}
+
+<span class="keyword">int</span> main() {
+    <span class="keyword">int</span> *array = (<span class="keyword">int</span>*)malloc(ARRAY_SIZE * <span class="keyword">sizeof</span>(<span class="keyword">int</span>));
+    
+    <span class="comment">// Initialize array</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < ARRAY_SIZE; i++) {
+        array[i] = i;
+    }
+    
+    clock_t start = clock();
+    processArray(array, ARRAY_SIZE);
+    clock_t end = clock();
+    
+    <span class="keyword">double</span> time_taken = ((<span class="keyword">double</span>)(end - start)) / CLOCKS_PER_SEC;
+    printf(<span class="string">"Time taken: %f seconds\n"</span>, time_taken);
+    
+    free(array);
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Create multiple threads using <code>pthread_create()</code></li>
+                    <li>Divide the array among threads (each thread processes a chunk)</li>
+                    <li>Use a structure to pass thread parameters (start index, end index, array pointer)</li>
+                    <li>Wait for all threads to complete using <code>pthread_join()</code></li>
+                    <li>Measure and compare execution time</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Include <code>&lt;pthread.h&gt;</code> header</li>
+                    <li>Compile with <code>-pthread</code> flag: <code>gcc -pthread program.c -o program</code></li>
+                    <li>Create a struct to pass data to each thread:
+                        <pre><code><span class="keyword">typedef struct</span> {
+    <span class="keyword">int</span> start;
+    <span class="keyword">int</span> end;
+    <span class="keyword">int</span> *array;
+} thread_data_t;</code></pre>
+                    </li>
+                    <li>Thread function signature: <code>void* threadFunction(void* arg)</code></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 2: Dot Product with Mutex -->
+        <div class="exercise-box">
+            <h3>Exercise 2: Parallel Dot Product with Synchronization</h3>
+            <p><strong>Problem:</strong> Calculate the dot product of two vectors using multiple threads. Use mutex to protect the shared sum variable.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;</span>
+
+<span class="keyword">#define</span> VECTOR_SIZE <span class="literal">1000000</span>
+
+<span class="keyword">double</span> dotProduct(<span class="keyword">double</span> *a, <span class="keyword">double</span> *b, <span class="keyword">int</span> size) {
+    <span class="keyword">double</span> sum = <span class="literal">0.0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < size; i++) {
+        sum += a[i] * b[i];
+    }
+    <span class="keyword">return</span> sum;
+}
+
+<span class="keyword">int</span> main() {
+    <span class="keyword">double</span> *a = (<span class="keyword">double</span>*)malloc(VECTOR_SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>));
+    <span class="keyword">double</span> *b = (<span class="keyword">double</span>*)malloc(VECTOR_SIZE * <span class="keyword">sizeof</span>(<span class="keyword">double</span>));
+    
+    <span class="comment">// Initialize vectors</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < VECTOR_SIZE; i++) {
+        a[i] = <span class="literal">1.0</span>;
+        b[i] = <span class="literal">2.0</span>;
+    }
+    
+    <span class="keyword">double</span> result = dotProduct(a, b, VECTOR_SIZE);
+    printf(<span class="string">"Dot product: %f\n"</span>, result);
+    
+    free(a);
+    free(b);
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Create multiple threads, each computing a partial dot product</li>
+                    <li>Use a mutex to protect the shared sum variable when adding partial results</li>
+                    <li>Initialize the mutex with <code>pthread_mutex_init()</code></li>
+                    <li>Lock before updating sum, unlock after</li>
+                    <li>Destroy the mutex with <code>pthread_mutex_destroy()</code></li>
+                    <li>Compare with a version that uses local variables and combines at the end (better approach)</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <ul>
+                    <li><strong>Option 1:</strong> Use mutex to protect shared sum (simple but has lock contention)</li>
+                    <li><strong>Option 2:</strong> Each thread computes local sum, then add to global sum once (better performance, less contention)</li>
+                </ul>
+                <p><em>Implement both approaches and measure the performance difference - Option 2 is significantly faster!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Declare mutex: <code>pthread_mutex_t mutex;</code></li>
+                    <li>Initialize: <code>pthread_mutex_init(&mutex, NULL);</code></li>
+                    <li>Lock: <code>pthread_mutex_lock(&mutex);</code></li>
+                    <li>Unlock: <code>pthread_mutex_unlock(&mutex);</code></li>
+                    <li><strong>Better approach:</strong> Each thread computes local sum, then add to global sum once (reduces lock contention)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 3: Producer-Consumer with Condition Variables -->
+        <div class="exercise-box">
+            <h3>Exercise 3: Producer-Consumer Problem</h3>
+            <p><strong>Problem:</strong> Implement a producer-consumer pattern where producer threads add items to a buffer and consumer threads remove items, using condition variables for synchronization.</p>
+            
+            <h4>Sequential Code (Provided - This is a template):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;</span>
+
+<span class="keyword">#define</span> BUFFER_SIZE <span class="literal">10</span>
+<span class="keyword">#define</span> NUM_ITEMS <span class="literal">100</span>
+
+<span class="keyword">int</span> buffer[BUFFER_SIZE];
+<span class="keyword">int</span> count = <span class="literal">0</span>; <span class="comment">// Number of items in buffer</span>
+<span class="keyword">int</span> in = <span class="literal">0</span>;   <span class="comment">// Index for producer</span>
+<span class="keyword">int</span> out = <span class="literal">0</span>;  <span class="comment">// Index for consumer</span>
+
+<span class="comment">// TODO: Add mutex and condition variables</span>
+
+<span class="keyword">void</span>* producer(<span class="keyword">void</span> *arg) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < NUM_ITEMS; i++) {
+        <span class="comment">// Wait if buffer is full</span>
+        <span class="comment">// Add item to buffer</span>
+        <span class="comment">// Signal consumer</span>
+        printf(<span class="string">"Produced: %d\n"</span>, i);
+    }
+    <span class="keyword">return</span> NULL;
+}
+
+<span class="keyword">void</span>* consumer(<span class="keyword">void</span> *arg) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < NUM_ITEMS; i++) {
+        <span class="comment">// Wait if buffer is empty</span>
+        <span class="comment">// Remove item from buffer</span>
+        <span class="comment">// Signal producer</span>
+        printf(<span class="string">"Consumed: %d\n"</span>, i);
+    }
+    <span class="keyword">return</span> NULL;
+}
+
+<span class="keyword">int</span> main() {
+    <span class="comment">// Create producer and consumer threads</span>
+    <span class="comment">// Join threads</span>
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Add a mutex to protect the buffer and shared variables</li>
+                    <li>Add two condition variables: <code>not_full</code> and <code>not_empty</code></li>
+                    <li>In producer: wait on <code>not_full</code> if buffer is full, signal <code>not_empty</code> after adding</li>
+                    <li>In consumer: wait on <code>not_empty</span> if buffer is empty, signal <code>not_full</code> after removing</li>
+                    <li>Initialize and destroy mutex and condition variables properly</li>
+                    <li>Test with multiple producers and consumers</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Declare: <code>pthread_mutex_t mutex;</code> and <code>pthread_cond_t not_full, not_empty;</code></li>
+                    <li>Initialize: <code>pthread_cond_init(&not_full, NULL);</code></li>
+                    <li>Wait: <code>pthread_cond_wait(&not_full, &mutex);</code> (must hold mutex)</li>
+                    <li>Signal: <code>pthread_cond_signal(&not_empty);</code></li>
+                    <li>Always check condition in a while loop: <code>while (count == BUFFER_SIZE) pthread_cond_wait(...);</code></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 4: Parallel Matrix Multiplication -->
+        <div class="exercise-box">
+            <h3>Exercise 4: Parallel Matrix Multiplication</h3>
+            <p><strong>Problem:</strong> Multiply two matrices using multiple threads, where each thread computes a set of rows of the result matrix.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;</span>
+
+<span class="keyword">#define</span> SIZE <span class="literal">1000</span>
+
+<span class="keyword">void</span> matrixMultiply(<span class="keyword">int</span> **A, <span class="keyword">int</span> **B, <span class="keyword">int</span> **C, <span class="keyword">int</span> size) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < size; i++) {
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="literal">0</span>; j < size; j++) {
+            C[i][j] = <span class="literal">0</span>;
+            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="literal">0</span>; k < size; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+}
+
+<span class="keyword">int</span> main() {
+    <span class="comment">// Allocate matrices</span>
+    <span class="keyword">int</span> **A = (<span class="keyword">int</span>**)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">int</span>*));
+    <span class="keyword">int</span> **B = (<span class="keyword">int</span>**)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">int</span>*));
+    <span class="keyword">int</span> **C = (<span class="keyword">int</span>**)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">int</span>*));
+    
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        A[i] = (<span class="keyword">int</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">int</span>));
+        B[i] = (<span class="keyword">int</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">int</span>));
+        C[i] = (<span class="keyword">int</span>*)malloc(SIZE * <span class="keyword">sizeof</span>(<span class="keyword">int</span>));
+    }
+    
+    <span class="comment">// Initialize matrices</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="literal">0</span>; j < SIZE; j++) {
+            A[i][j] = i + j;
+            B[i][j] = i * j;
+        }
+    }
+    
+    clock_t start = clock();
+    matrixMultiply(A, B, C, SIZE);
+    clock_t end = clock();
+    
+    <span class="keyword">double</span> time_taken = ((<span class="keyword">double</span>)(end - start)) / CLOCKS_PER_SEC;
+    printf(<span class="string">"Time taken: %f seconds\n"</span>, time_taken);
+    
+    <span class="comment">// Free memory</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < SIZE; i++) {
+        free(A[i]);
+        free(B[i]);
+        free(C[i]);
+    }
+    free(A);
+    free(B);
+    free(C);
+    
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Create multiple threads, each computing a range of rows</li>
+                    <li>Use a structure to pass thread parameters (start row, end row, matrices)</li>
+                    <li>No synchronization needed (each thread writes to different rows)</li>
+                    <li>Join all threads and measure performance</li>
+                    <li>Compare with sequential version</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <ul>
+                    <li><strong>Division Strategy:</strong> Row-based (each thread computes several rows) or Block-based (each thread computes a rectangular block)</li>
+                    <li><strong>Work Distribution:</strong> Static (equal chunks) or Dynamic (work-stealing approach)</li>
+                </ul>
+                <p><em>Try both row-based and block-based division to see which performs better on your system!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Calculate rows per thread: <code>rows_per_thread = SIZE / num_threads</code></li>
+                    <li>Thread i computes rows from <code>i * rows_per_thread</code> to <code>(i+1) * rows_per_thread - 1</code></li>
+                    <li>No mutex needed since threads don't share write locations</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 5: Read-Write Lock -->
+        <div class="exercise-box">
+            <h3>Exercise 5: Reader-Writer Problem with Read-Write Locks</h3>
+            <p><strong>Problem:</strong> Implement a reader-writer scenario where multiple readers can read simultaneously, but writers need exclusive access.</p>
+            
+            <h4>Sequential Code (Provided - Template):</h4>
+            <pre><code><span class="comment">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;unistd.h&gt;</span>
+
+<span class="keyword">int</span> shared_data = <span class="literal">0</span>;
+<span class="keyword">int</span> reader_count = <span class="literal">0</span>;
+
+<span class="comment">// TODO: Add read-write lock</span>
+
+<span class="keyword">void</span>* reader(<span class="keyword">void</span> *arg) {
+    <span class="keyword">int</span> id = *((<span class="keyword">int</span>*)arg);
+    <span class="comment">// Acquire read lock</span>
+    <span class="comment">// Read shared_data</span>
+    printf(<span class="string">"Reader %d read: %d\n"</span>, id, shared_data);
+    <span class="comment">// Release read lock</span>
+    <span class="keyword">return</span> NULL;
+}
+
+<span class="keyword">void</span>* writer(<span class="keyword">void</span> *arg) {
+    <span class="keyword">int</span> id = *((<span class="keyword">int</span>*)arg);
+    <span class="comment">// Acquire write lock</span>
+    <span class="comment">// Write to shared_data</span>
+    shared_data++;
+    printf(<span class="string">"Writer %d wrote: %d\n"</span>, id, shared_data);
+    <span class="comment">// Release write lock</span>
+    <span class="keyword">return</span> NULL;
+}
+
+<span class="keyword">int</span> main() {
+    <span class="comment">// Create multiple reader and writer threads</span>
+    <span class="keyword">return</span> <span class="literal">0</span>;
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Use <code>pthread_rwlock_t</code> for read-write synchronization</li>
+                    <li>Readers use <code>pthread_rwlock_rdlock()</code></li>
+                    <li>Writers use <code>pthread_rwlock_wrlock()</code></li>
+                    <li>All use <code>pthread_rwlock_unlock()</code> to release</li>
+                    <li>Initialize and destroy the read-write lock properly</li>
+                    <li>Test with multiple readers and writers</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Declare: <code>pthread_rwlock_t rwlock;</code></li>
+                    <li>Initialize: <code>pthread_rwlock_init(&rwlock, NULL);</code></li>
+                    <li>Read lock: <code>pthread_rwlock_rdlock(&rwlock);</code></li>
+                    <li>Write lock: <code>pthread_rwlock_wrlock(&rwlock);</code></li>
+                    <li>Unlock: <code>pthread_rwlock_unlock(&rwlock);</code></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Compilation Instructions</h2>
+            <p>All PThreads programs must be compiled with the <code>-pthread</code> flag:</p>
+            <pre><code>gcc -pthread program.c -o program</code></pre>
+            <p>Or with optimization flags:</p>
+            <pre><code>gcc -pthread -O2 program.c -o program</code></pre>
+        </div>
+        
+        <div class="section">
+            <h2>Submission Guidelines</h2>
+            <ul>
+                <li>Create a separate C file for each exercise</li>
+                <li>Name your files: <code>array_parallel.c</code>, <code>dotproduct_parallel.c</code>, etc.</li>
+                <li>Include comments explaining your parallelization strategy</li>
+                <li>Measure execution times using <code>clock()</code> or <code>gettimeofday()</code></li>
+                <li>Test with different numbers of threads (2, 4, 8) and report findings</li>
+                <li>Verify correctness by comparing results with sequential versions</li>
+                <li>Include a Makefile for easy compilation</li>
+            </ul>
+        </div>
+        
+        <div class="info-box">
+            <strong>Additional Resources:</strong>
+            <ul>
+                <li>Review Chapter 4 tutorial for detailed explanations</li>
+                <li>Check <code>Examples/Pthreads_Examples/</code> for reference implementations</li>
+                <li>Use <code>pthread_attr_setdetachstate()</code> if you don't need to join threads</li>
+                <li>Always check return values of pthread functions for errors</li>
+            </ul>
+        </div>
+        
+        <footer>
+            <p>© 2026 - Dr Kamal Beydoun | Lebanese University</p>
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('pre').forEach(block => {
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
+            button.innerText = 'Copy';
+            block.appendChild(button);
+
+            button.addEventListener('click', () => {
+                const code = block.innerText.replace(/Copy$/, '');
+                navigator.clipboard.writeText(code).then(() => {
+                    button.innerText = 'Copied!';
+                    button.classList.add('copied');
+                    setTimeout(() => {
+                        button.innerText = 'Copy';
+                        button.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

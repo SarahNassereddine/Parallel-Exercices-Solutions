@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise: Multithreaded Operations</title>
+    <link rel="stylesheet" href="../../../styles.css">
+    <style>
+        .exercise-box {
+            background: #fff9e6;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        .exercise-box h3 {
+            color: #ff9800;
+            margin-top: 0;
+        }
+        .objective-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .task-list {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .task-list li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Exercise: Implementing Multithreaded Operations</h1>
+        
+        <div class="objective-box">
+            <h2>Objective</h2>
+            <p>The primary goal of this exercise is to become familiar with core PThreads operations, including <b>creation</b>, <b>joining</b>, and <b>exiting</b> (passing arguments). You will implement functions that calculate the <b>factorial</b> of a number, and find the <b>minimum</b> and <b>maximum</b> values in an array. Results must be returned to the main function through thread exits or shared memory.</p>
+        </div>
+        
+        <div class="exercise-box">
+            <h3>Requirements</h3>
+            <ul class="task-list">
+                <li><strong>Shared Data:</strong> An integer <code>X</code> and an integer array <code>arr</code> of size <code>N</code>, both populated by user input.</li>
+                <li><strong>factorial()</strong>: Calculates the factorial of <code>X</code> and exits with the result.</li>
+                <li><strong>min()</strong>: Finds the minimum value in <code>arr</code> and exits with the result.</li>
+                <li><strong>max()</strong>: Finds the maximum value in <code>arr</code> and exits with the result.</li>
+                <li><strong>minMax()</strong>: Manages threads for <code>min</code> and <code>max</code> functions, stores their results, and exits with the combined data.</li>
+            </ul>
+
+            <h4>Starter Template:</h4>
+            <pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+
+#define N 10
+
+int X;
+int arr[N];
+
+// TODO: Implement thread-safe functions
+// 1. void* factorial(void* arg)
+// 2. void* min(void* arg)
+// 3. void* max(void* arg)
+// 4. void* minMax(void* arg)
+
+int main() {
+    // TODO: Initialize data, create threads, join threads, and print results
+    return 0;
+}</code></pre>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 - Dr Kamal Beydoun | Lebanese University</p>
+        </footer>
+    </div>
+    <script>
+        document.querySelectorAll('pre').forEach(block => {
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
+            button.innerText = 'Copy';
+            block.appendChild(button);
+            button.addEventListener('click', () => {
+                const code = block.innerText.replace(/Copy$/, '');
+                navigator.clipboard.writeText(code).then(() => {
+                    button.innerText = 'Copied!';
+                    button.classList.add('copied');
+                    setTimeout(() => {
+                        button.innerText = 'Copy';
+                        button.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

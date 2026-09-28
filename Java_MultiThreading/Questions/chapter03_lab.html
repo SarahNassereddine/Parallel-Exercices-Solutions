@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Java Concurrency - Lab Exercises</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <style>
+        .exercise-box {
+            background: #fff9e6;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        
+        .exercise-box h3 {
+            color: #ff9800;
+            margin-top: 0;
+        }
+        
+        .hint-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .objective-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .task-list {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .task-list li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="index.html">Home</a>
+            <a href="chapter03.html">Chapter 3: Java Concurrency</a>
+            <a href="chapter03_flashcards.html">📇 Flashcards</a>
+            <a href="chapter04.html">Next: Chapter 4</a>
+        </div>
+        
+        <h1>Chapter 3: Java Concurrency - Lab Exercises</h1>
+        
+        <div class="objective-box">
+            <h2>Lab Objectives</h2>
+            <ul>
+                <li>Understand how to convert sequential Java programs to parallel versions</li>
+                <li>Practice using Java threads, ExecutorService, and synchronization mechanisms</li>
+                <li>Learn to identify parallelizable sections in code</li>
+                <li>Implement proper synchronization to avoid race conditions</li>
+                <li>Measure and compare performance between sequential and parallel versions</li>
+            </ul>
+        </div>
+        
+        <!-- Exercise 1: Array Sum -->
+        <div class="exercise-box">
+            <h3>Exercise 1: Parallel Array Sum</h3>
+            <p><strong>Problem:</strong> Calculate the sum of a large array of integers using multiple threads.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="keyword">public class</span> ArraySumSequential {
+    <span class="keyword">public static void</span> main(String[] args) {
+        <span class="keyword">int</span> size = <span class="literal">1000000</span>;
+        <span class="keyword">int</span>[] array = <span class="keyword">new</span> <span class="keyword">int</span>[size];
+        
+        <span class="comment">// Initialize array with values</span>
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < size; i++) {
+            array[i] = i + <span class="literal">1</span>;
+        }
+        
+        <span class="comment">// Sequential sum</span>
+        <span class="keyword">long</span> startTime = System.nanoTime();
+        <span class="keyword">long</span> sum = <span class="literal">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < size; i++) {
+            sum += array[i];
+        }
+        <span class="keyword">long</span> endTime = System.nanoTime();
+        
+        System.out.println(<span class="string">"Sum: "</span> + sum);
+        System.out.println(<span class="string">"Time: "</span> + (endTime - startTime) / <span class="literal">1_000_000</span> + <span class="string">" ms"</span>);
+    }
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Create a parallel version using <code>ExecutorService</code> with a fixed thread pool</li>
+                    <li>Divide the array into chunks (one per thread)</li>
+                    <li>Each thread should calculate the sum of its chunk</li>
+                    <li>Combine the partial sums to get the final result</li>
+                    <li>Collect results using a thread-safe shared structure (e.g., synchronized list or AtomicLong for partial sums)</li>
+                    <li>Measure and compare execution time with the sequential version</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <ul>
+                    <li><strong>Option 1:</strong> Use <code>ExecutorService</code> with <code>execute(Runnable)</code> and a thread-safe result collection (recommended)</li>
+                    <li><strong>Option 2:</strong> Use <code>Thread</code> class with manual thread management</li>
+                    <li><strong>Option 3:</strong> Use <code>Runnable</code> interface with lambda expressions</li>
+                </ul>
+                <p><em>Try implementing at least two different approaches to understand the trade-offs!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Use <code>Executors.newFixedThreadPool(numThreads)</code> to create a thread pool</li>
+                    <li>Calculate chunk size: <code>chunkSize = array.length / numThreads</code></li>
+                    <li>Each thread processes indices from <code>startIndex</code> to <code>endIndex</code></li>
+                    <li>Use <code>execute(Runnable)</code> to submit tasks; each task adds its partial sum to a shared thread-safe variable (e.g., <code>AtomicLong</code>) or collect in a synchronized list</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <strong>Expected Output:</strong> The parallel version should produce the same sum but potentially faster execution time (depending on your CPU cores).
+            </div>
+        </div>
+        
+        <!-- Exercise 2: Matrix Multiplication -->
+        <div class="exercise-box">
+            <h3>Exercise 2: Parallel Matrix Multiplication</h3>
+            <p><strong>Problem:</strong> Multiply two matrices using multiple threads, where each thread computes a portion of the result matrix.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="keyword">public class</span> MatrixMultiplicationSequential {
+    <span class="keyword">public static void</span> main(String[] args) {
+        <span class="keyword">int</span> size = <span class="literal">1000</span>;
+        <span class="keyword">int</span>[][] matrixA = <span class="keyword">new</span> <span class="keyword">int</span>[size][size];
+        <span class="keyword">int</span>[][] matrixB = <span class="keyword">new</span> <span class="keyword">int</span>[size][size];
+        <span class="keyword">int</span>[][] result = <span class="keyword">new</span> <span class="keyword">int</span>[size][size];
+        
+        <span class="comment">// Initialize matrices</span>
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < size; i++) {
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="literal">0</span>; j < size; j++) {
+                matrixA[i][j] = i + j;
+                matrixB[i][j] = i * j;
+            }
+        }
+        
+        <span class="comment">// Sequential matrix multiplication</span>
+        <span class="keyword">long</span> startTime = System.nanoTime();
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < size; i++) {
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="literal">0</span>; j < size; j++) {
+                result[i][j] = <span class="literal">0</span>;
+                <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="literal">0</span>; k < size; k++) {
+                    result[i][j] += matrixA[i][k] * matrixB[k][j];
+                }
+            }
+        }
+        <span class="keyword">long</span> endTime = System.nanoTime();
+        
+        System.out.println(<span class="string">"Time: "</span> + (endTime - startTime) / <span class="literal">1_000_000</span> + <span class="string">" ms"</span>);
+    }
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Create a parallel version where each thread computes a set of rows of the result matrix</li>
+                    <li>Use <code>ExecutorService</code> to manage threads</li>
+                    <li>Divide rows among threads (e.g., thread 0 computes rows 0-249, thread 1 computes rows 250-499, etc.)</li>
+                    <li>Ensure no race conditions (each thread writes to different rows)</li>
+                    <li>Measure performance improvement</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <ul>
+                    <li><strong>Option 1:</strong> Use <code>ExecutorService</code> (recommended for better resource management)</li>
+                    <li><strong>Option 2:</strong> Use <code>Thread</code> class with manual thread management</li>
+                    <li><strong>Division Strategy:</strong> Row-based (each thread computes several rows) or Block-based (each thread computes a rectangular block)</li>
+                </ul>
+                <p><em>Try both row-based and block-based division to see which performs better!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Each thread should be responsible for a range of rows: <code>startRow</code> to <code>endRow</code></li>
+                    <li>No synchronization needed if each thread writes to different rows</li>
+                    <li>Use <code>Runtime.getRuntime().availableProcessors()</code> to determine optimal thread count</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 3: Producer-Consumer with Synchronization -->
+        <div class="exercise-box">
+            <h3>Exercise 3: Thread-Safe Counter with Synchronization</h3>
+            <p><strong>Problem:</strong> Multiple threads increment a shared counter. Implement proper synchronization to ensure correctness.</p>
+            
+            <h4>Sequential Code (Provided - This is actually a broken concurrent version):</h4>
+            <pre><code><span class="keyword">public class</span> CounterSequential {
+    <span class="keyword">private static int</span> counter = <span class="literal">0</span>;
+    <span class="keyword">private static final int</span> NUM_THREADS = <span class="literal">10</span>;
+    <span class="keyword">private static final int</span> INCREMENTS_PER_THREAD = <span class="literal">1000</span>;
+    
+    <span class="keyword">public static void</span> main(String[] args) <span class="keyword">throws</span> InterruptedException {
+        Thread[] threads = <span class="keyword">new</span> Thread[NUM_THREADS];
+        
+        <span class="comment">// Create threads</span>
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < NUM_THREADS; i++) {
+            threads[i] = <span class="keyword">new</span> Thread(() -> {
+                <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="literal">0</span>; j < INCREMENTS_PER_THREAD; j++) {
+                    counter++; <span class="comment">// NOT THREAD-SAFE!</span>
+                }
+            });
+            threads[i].start();
+        }
+        
+        <span class="comment">// Wait for all threads</span>
+        <span class="keyword">for</span> (Thread t : threads) {
+            t.join();
+        }
+        
+        System.out.println(<span class="string">"Expected: "</span> + (NUM_THREADS * INCREMENTS_PER_THREAD));
+        System.out.println(<span class="string">"Actual: "</span> + counter);
+    }
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Fix the race condition using <code>synchronized</code> keyword</li>
+                    <li>Create an alternative version using <code>ReentrantLock</code></li>
+                    <li>Create another version using <code>AtomicInteger</code></li>
+                    <li>Compare the performance of all three approaches</li>
+                    <li>Verify that all versions produce the correct result</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <p>This exercise is designed to explore multiple synchronization mechanisms:</p>
+                <ul>
+                    <li><strong>Option 1:</strong> <code>synchronized</code> keyword (simplest, built-in)</li>
+                    <li><strong>Option 2:</strong> <code>ReentrantLock</code> (more flexible, explicit control)</li>
+                    <li><strong>Option 3:</strong> <code>AtomicInteger</code> (lock-free, often fastest for simple operations)</li>
+                </ul>
+                <p><em>Implement all three versions and compare their performance and code complexity!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Use <code>synchronized</code> method or block to protect the increment operation</li>
+                    <li>For <code>ReentrantLock</code>, use <code>lock()</code> before increment and <code>unlock()</code> in finally block</li>
+                    <li><code>AtomicInteger</code> provides atomic operations like <code>incrementAndGet()</code></li>
+                    <li>Measure execution time for each approach</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 4: Parallel Search -->
+        <div class="exercise-box">
+            <h3>Exercise 4: Parallel Search in Array</h3>
+            <p><strong>Problem:</strong> Search for a value in a large array using multiple threads. Return the index if found, or -1 if not found.</p>
+            
+            <h4>Sequential Code (Provided):</h4>
+            <pre><code><span class="keyword">public class</span> SearchSequential {
+    <span class="keyword">public static int</span> search(<span class="keyword">int</span>[] array, <span class="keyword">int</span> target) {
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < array.length; i++) {
+            <span class="keyword">if</span> (array[i] == target) {
+                <span class="keyword">return</span> i;
+            }
+        }
+        <span class="keyword">return</span> -<span class="literal">1</span>;
+    }
+    
+    <span class="keyword">public static void</span> main(String[] args) {
+        <span class="keyword">int</span> size = <span class="literal">10000000</span>;
+        <span class="keyword">int</span>[] array = <span class="keyword">new</span> <span class="keyword">int</span>[size];
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < size; i++) {
+            array[i] = i;
+        }
+        
+        <span class="keyword">int</span> target = <span class="literal">5000000</span>;
+        <span class="keyword">long</span> startTime = System.nanoTime();
+        <span class="keyword">int</span> result = search(array, target);
+        <span class="keyword">long</span> endTime = System.nanoTime();
+        
+        System.out.println(<span class="string">"Found at index: "</span> + result);
+        System.out.println(<span class="string">"Time: "</span> + (endTime - startTime) / <span class="literal">1_000_000</span> + <span class="string">" ms"</span>);
+    }
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Create a parallel version where each thread searches a portion of the array</li>
+                    <li>If any thread finds the target, all threads should stop (use a shared flag)</li>
+                    <li>Return the correct index (accounting for the chunk offset)</li>
+                    <li>Handle the case where the value is not found</li>
+                    <li>Use <code>volatile</code> or <code>AtomicBoolean</code> for the stop flag</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <ul>
+                    <li><strong>Stop Flag:</strong> Use <code>volatile boolean</code> or <code>AtomicBoolean</code> (both work, AtomicBoolean is more explicit)</li>
+                    <li><strong>Thread Management:</strong> Use <code>ExecutorService</code> (recommended) or manual <code>Thread</code> class</li>
+                    <li><strong>Result Collection:</strong> Use a thread-safe shared variable (e.g., <code>AtomicInteger</code> for index, volatile/AtomicBoolean for found flag) or synchronized block to store the result</li>
+                </ul>
+                <p><em>Try different combinations to understand when to use each approach!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Use <code>volatile boolean found</code> or <code>AtomicBoolean</code> to signal when target is found</li>
+                    <li>Each thread should check the flag in its loop and exit early if found</li>
+                    <li>When a thread finds the target, set the flag and return the index (with offset)</li>
+                    <li>Use <code>ExecutorService.execute(Runnable)</code> with a shared result variable (e.g., volatile or AtomicInteger for the found index) protected by synchronization if needed</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Exercise 5: ReentrantLock with Condition Variables -->
+        <div class="exercise-box">
+            <h3>Exercise 5: Thread Coordination with ReentrantLock and Condition</h3>
+            <p><strong>Problem:</strong> Implement a task scheduler where multiple worker threads wait for tasks to be available, and a coordinator thread assigns tasks. Use ReentrantLock and Condition variables for proper thread coordination.</p>
+            
+            <h4>Sequential Code (Provided - This is a broken concurrent version):</h4>
+            <pre><code><span class="keyword">import</span> java.util.concurrent.locks.*;
+<span class="keyword">import</span> java.util.*;
+
+<span class="keyword">public class</span> TaskSchedulerSequential {
+    <span class="keyword">private static</span> Queue&lt;String&gt; tasks = <span class="keyword">new</span> LinkedList&lt;&gt;();
+    <span class="keyword">private static final int</span> NUM_WORKERS = <span class="literal">3</span>;
+    <span class="keyword">private static final int</span> NUM_TASKS = <span class="literal">10</span>;
+    
+    <span class="keyword">public static void</span> main(String[] args) <span class="keyword">throws</span> InterruptedException {
+        <span class="comment">// Coordinator thread adds tasks</span>
+        Thread coordinator = <span class="keyword">new</span> Thread(() -> {
+            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < NUM_TASKS; i++) {
+                tasks.offer(<span class="string">"Task-"</span> + i);
+                System.out.println(<span class="string">"Coordinator: Added Task-"</span> + i);
+                <span class="keyword">try</span> { Thread.sleep(<span class="literal">100</span>); } <span class="keyword">catch</span> (InterruptedException e) {}
+            }
+        });
+        
+        <span class="comment">// Worker threads process tasks</span>
+        Thread[] workers = <span class="keyword">new</span> Thread[NUM_WORKERS];
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="literal">0</span>; i < NUM_WORKERS; i++) {
+            <span class="keyword">final int</span> workerId = i;
+            workers[i] = <span class="keyword">new</span> Thread(() -> {
+                <span class="keyword">while</span> (<span class="literal">true</span>) {
+                    <span class="keyword">if</span> (!tasks.isEmpty()) { <span class="comment">// RACE CONDITION!</span>
+                        String task = tasks.poll();
+                        <span class="keyword">if</span> (task != <span class="literal">null</span>) {
+                            System.out.println(<span class="string">"Worker "</span> + workerId + <span class="string">": Processing "</span> + task);
+                            <span class="keyword">try</span> { Thread.sleep(<span class="literal">200</span>); } <span class="keyword">catch</span> (InterruptedException e) {}
+                        }
+                    }
+                }
+            });
+        }
+        
+        coordinator.start();
+        <span class="keyword">for</span> (Thread worker : workers) {
+            worker.start();
+        }
+        
+        coordinator.join();
+        Thread.sleep(<span class="literal">2000</span>); <span class="comment">// Give workers time to finish</span>
+    }
+}</code></pre>
+            
+            <h4>Your Task:</h4>
+            <div class="task-list">
+                <ol>
+                    <li>Fix the race condition using <code>ReentrantLock</code> to protect the shared task queue</li>
+                    <li>Use <code>Condition</code> variables so worker threads wait when no tasks are available</li>
+                    <li>Use <code>Condition.signalAll()</code> when the coordinator adds a new task</li>
+                    <li>Implement proper shutdown: coordinator signals workers when all tasks are done</li>
+                    <li>Use a <code>while</code> loop (not <code>if</code>) to check the condition, handling spurious wakeups</li>
+                    <li>Ensure workers terminate gracefully when all tasks are completed</li>
+                </ol>
+            </div>
+            
+            <div class="hint-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>💡 Multiple Approaches:</strong>
+                <ul>
+                    <li><strong>Option 1:</strong> Use <code>ReentrantLock</code> with <code>Condition</code> variables (recommended for this exercise)</li>
+                    <li><strong>Option 2:</strong> Use <code>BlockingQueue</code> (simpler, but less control over waiting behavior)</li>
+                </ul>
+                <p><em>Try implementing with BlockingQueue as well to see how it simplifies the code, but understand that ReentrantLock+Condition gives you more control!</em></p>
+            </div>
+            
+            <div class="hint-box">
+                <strong>Hints:</strong>
+                <ul>
+                    <li>Create a <code>ReentrantLock</code> and get a <code>Condition</code> from it: <code>lock.newCondition()</code></li>
+                    <li>Workers should: <code>lock.lock()</code> → check condition in <code>while</code> loop → <code>condition.await()</code> if no tasks → process task → <code>lock.unlock()</code></li>
+                    <li>Coordinator should: <code>lock.lock()</code> → add task → <code>condition.signalAll()</code> → <code>lock.unlock()</code></li>
+                    <li>Use a boolean flag (e.g., <code>allTasksDone</code>) to signal when coordinator finishes</li>
+                    <li>Always use <code>try-finally</code> to ensure <code>lock.unlock()</code> is called</li>
+                    <li>Remember: <code>await()</code> must be called while holding the lock, and it releases the lock automatically</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <strong>Expected Output:</strong> All tasks should be processed exactly once by worker threads, with no race conditions. Workers should wait efficiently when no tasks are available, and terminate properly when all tasks are done.
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Submission Guidelines</h2>
+            <ul>
+                <li>Create a separate Java file for each exercise</li>
+                <li>Name your files: <code>ArraySumParallel.java</code>, <code>MatrixMultiplicationParallel.java</code>, etc.</li>
+                <li>Include comments explaining your parallelization strategy</li>
+                <li>Measure and report execution times for both sequential and parallel versions</li>
+                <li>Verify correctness by comparing results</li>
+                <li>Test with different numbers of threads (2, 4, 8) and report findings</li>
+            </ul>
+        </div>
+        
+        <div class="info-box">
+            <strong>Additional Resources:</strong>
+            <ul>
+                <li>Review Chapter 3 tutorial for detailed explanations</li>
+                <li>Check <code>Examples/Java_Examples/</code> for reference implementations</li>
+                <li>Use <code>System.nanoTime()</code> for accurate timing measurements</li>
+            </ul>
+        </div>
+        
+        <footer>
+            <p>© 2026 - Dr Kamal Beydoun | Lebanese University</p>
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('pre').forEach(block => {
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
+            button.innerText = 'Copy';
+            block.appendChild(button);
+
+            button.addEventListener('click', () => {
+                const code = block.innerText.replace(/Copy$/, '');
+                navigator.clipboard.writeText(code).then(() => {
+                    button.innerText = 'Copied!';
+                    button.classList.add('copied');
+                    setTimeout(() => {
+                        button.innerText = 'Copy';
+                        button.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

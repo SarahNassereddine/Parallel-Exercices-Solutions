@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise: Producer-Consumer Problem</title>
+    <link rel="stylesheet" href="../../../styles.css">
+    <style>
+        .exercise-box {
+            background: #fff9e6;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        .exercise-box h3 {
+            color: #ff9800;
+            margin-top: 0;
+        }
+        .case-box {
+            background: #ffffff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .case-title {
+            font-weight: bold;
+            color: #d32f2f;
+            margin-bottom: 5px;
+        }
+        .objective-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Exercise: The Producer-Consumer Problem</h1>
+        
+        <div class="objective-box">
+            <h2>Objective</h2>
+            <p>The goal of this exercise is to master thread synchronization using <b>Mutexes</b> and <b>Condition Variables</b>. You will implement various scenarios of the classic Producer-Consumer problem, learning how to manage shared resources (the buffer) while ensuring data integrity and preventing race conditions.</p>
+        </div>
+        
+        <div class="exercise-box">
+            <h3>Cases to Implement</h3>
+            <p>Develop a parallel solution for each of the following scenarios using the <b>PThreads</b> library:</p>
+
+            <div class="case-box">
+                <div class="case-title">Case 1: Single Producer & Single Consumer (Variable Load)</div>
+                <p>Implement a system with exactly one producer and one consumer. The producer fills <b>one or more</b> elements in the buffer, and then the consumer reads <b>one or more</b> elements. The threads should coordinate so the consumer never reads from an empty buffer and the producer never writes to a full one.</p>
+            </div>
+
+            <div class="case-box">
+                <div class="case-title">Case 2: Single Producer & Single Consumer (Full Cycle)</div>
+                <p>One producer and one consumer. In this restricted mode, the producer must fill <b>all</b> elements of the buffer before the consumer is allowed to start. The consumer must then read <b>all</b> elements before the producer can start reproducing data.</p>
+            </div>
+
+            <div class="case-box">
+                <div class="case-title">Case 3: Single Producer & Single Consumer (Chunk-based)</div>
+                <p>One producer and one consumer. The producer fills the buffer in specific <b>chunks</b> (blocks of data). Once a chunk is ready, the consumer can read one or more chunks. This explores synchronization at a higher granularity than individual elements.</p>
+            </div>
+
+            <div class="case-box">
+                <div class="case-title">Case 4: Multi-Producer & Multi-Consumer (Bulk Operations)</div>
+                <p>A system with many producers and many consumers. The synchronization rule is strict: the aggregate of all producers must <b>fully produce</b> the entire buffer before any consumer can act. Similarly, all consumers must <b>fully empty</b> the buffer before producers can start again.</p>
+            </div>
+
+            <div class="case-box">
+                <div class="case-title">Case 5: Multi-Producer & Multi-Consumer (Chunk-based Bulk Operations)</div>
+                <p>A system with many producers and many consumers, similar to Case 4, but with <b>chunk-based</b> synchronization. The aggregate of all producers must <b>fully produce</b> the entire buffer in <b>chunks</b> (blocks of data) before any consumer can act. Similarly, all consumers must <b>fully empty</b> the buffer by reading complete chunks before producers can start again. This combines the bulk operation model of Case 4 with the chunk granularity of Case 3.</p>
+            </div>
+
+            <div class="case-box">
+                <div class="case-title">Case 6: Multi-Producer & Multi-Consumer (Fairness)</div>
+                <p>Multiple producers and many consumers. Same as Case 5 (chunk-based bulk operations): the aggregate of all producers must <b>fully produce</b> the entire buffer in chunks before any consumer can act, and all consumers must <b>fully consume</b> the buffer before producers can start again. Additionally, a <b>thread-level fairness constraint</b> is enforced: No single thread (neither producer nor consumer) is allowed to process <b>two chunks consecutively</b>. This forces work rotation between the available threads.</p>
+            </div>
+
+            <div class="case-box">
+                <div class="case-title">Case 7: Multi-Producer & Multi-Consumer (Strict Rotation)</div>
+                <p>Many producers and many consumers. Same aggregate progress as Case 5: the buffer must be <b>fully produced</b> in chunks before any consumption begins, and <b>fully consumed</b> in chunks before production starts again. In this most restrictive case, a <b>strict rotation</b> is enforced: each individual producer is allowed to fill <b>exactly and only one chunk</b> during a single production round. Likewise, each consumer reads <b>exactly and only one chunk</b> per consumption round.</p>
+                <p><i><b>Note:</b> For this case, the <b>Buffer_Limit</b> should be exactly equal to <code>CHUNK_SIZE * number of Producers</code> (assuming the number of producers equals the number of consumers).</i></p>
+            </div>
+
+            <h4>Starter Template (Producer_Consumer.c):</h4>
+            <pre><code>#include&lt;stdio.h&gt;
+#include&lt;pthread.h&gt;
+#include&lt;stdlib.h&gt;
+ 
+#define Buffer_Limit 10
+ 
+int Buffer_Index_Value = 0;
+char *Buffer_Queue;
+ 
+void *Consumer(void *arg)
+{
+    while(1)
+    {
+        // TODO: Implement synchronization
+        printf("Consumer:%d\t", Buffer_Index_Value--);        
+    }    
+}
+ 
+void *Producer(void *arg)
+{    
+    while(1)
+    { 
+        // TODO: Implement synchronization
+        Buffer_Queue[Buffer_Index_Value++] = '@';
+        printf("Producer:%d\t", Buffer_Index_Value);
+    }    
+}
+ 
+int main()
+{    
+    pthread_t producer_thread_id, consumer_thread_id;
+    Buffer_Queue = (char *) malloc(sizeof(char) * Buffer_Limit);            
+    pthread_create(&producer_thread_id, NULL, Producer, NULL);
+    pthread_create(&consumer_thread_id, NULL, Consumer, NULL);
+    pthread_join(producer_thread_id, NULL);
+    pthread_join(consumer_thread_id, NULL);
+    return 0;
+}</code></pre>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 - Dr Kamal Beydoun | Lebanese University</p>
+        </footer>
+    </div>
+    <script>
+        document.querySelectorAll('pre').forEach(block => {
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
+            button.innerText = 'Copy';
+            block.appendChild(button);
+            button.addEventListener('click', () => {
+                const code = block.innerText.replace(/Copy$/, '');
+                navigator.clipboard.writeText(code).then(() => {
+                    button.innerText = 'Copied!';
+                    button.classList.add('copied');
+                    setTimeout(() => {
+                        button.innerText = 'Copy';
+                        button.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
